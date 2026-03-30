@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #000000;
+  --fg: #ffffff;
+  --text: rgba(255, 255, 255, 0.85);
+  --text-muted: rgba(255, 255, 255, 0.55);
+
+  /* Split-flap tile colors */
+  --tile-bg: #0a0a0a;
+  --tile-bg-light: #0f0f0f;
+  --tile-bg-darker: #050505;
+  --tile-text: #f0ece4;
+  --tile-split: rgba(0, 0, 0, 0.6);
+  --tile-shadow: rgba(0, 0, 0, 0.6);
+  --tile-highlight: rgba(255, 255, 255, 0.03);
+
+  /* Board */
+  --board-bg: #000000;
+  --board-border: rgba(255, 255, 255, 0.06);
+  --board-shadow: 0 4px 24px rgba(0, 0, 0, 0.4),
+    0 16px 64px rgba(0, 0, 0, 0.3),
+    0 0 160px rgba(0, 0, 0, 0.2),
+    0 32px 100px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.02);
+  --accent: rgba(255, 255, 255, 0.4);
+
+  /* Tile sizing — JS overrides these via useGridDimensions */
+  --tile-width: 48px;
+  --tile-height: 64px;  --tile-gap: 3px;
+  --tile-radius: 3px;
+  --tile-font-size: 30px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+}
+
+::selection {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--fg);
+}

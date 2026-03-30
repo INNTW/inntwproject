@@ -1,0 +1,138 @@
+"use client";
+
+import { useRef, useEffect, useState, useCallback } from "react";
+import FullScreenBoard, {
+  type FullScreenBoardRef,
+} from "@/components/display/FullScreenBoard";
+import { formatLines, createEmptyBoard } from "@/lib/vestaboard/message-formatter";
+import { useAudioEngine } from "@/hooks/useAudioEngine";
+import { ContentRotator } from "@/lib/content/content-rotator";
+import { QUOTES } from "@/lib/content/quotes";
+import CountdownTimer from "@/components/CountdownTimer";
+import EmailCapture from "@/components/EmailCapture";
+
+/**
+ * DISPLAY SETTINGS
+ */
+const FLIP_SPEED = 100;
+const STAGGER_DELAY = 10;
+const ROTATION_INTERVAL = 12;
+const INITIAL_DELAY = 800;
+
+export default function HomePage() {
+  const boardRef = useRef<FullScreenBoardRef>(null);
+  const [initialBoard] = useState(() => createEmptyBoard());
+  const isTransitioningRef = useRef(false);
+  const { audioEngine } = useAudioEngine();
+  const rotatorRef = useRef(new ContentRotator(QUOTES));
+  const onFlipStep = useCallback(() => {
+    if (audioEngine.initialized) {
+      audioEngine.playClack(Math.floor(Math.random() * 3));
+    }
+  }, [audioEngine]);
+
+  const showMessage = useCallback(
+    async (lines: string[]) => {
+      if (!boardRef.current || isTransitioningRef.current) return;
+      isTransitioningRef.current = true;
+      const target = formatLines(lines);
+      await boardRef.current.transitionTo(target, FLIP_SPEED, STAGGER_DELAY, onFlipStep);
+      isTransitioningRef.current = false;
+    },
+    [onFlipStep]
+  );
+
+  const cycleNext = useCallback(async () => {
+    const content = rotatorRef.current.next();
+    await showMessage(content.lines);
+  }, [showMessage]);
+
+  // Start the rotation cycle + interval
+  useEffect(() => {
+    const startTimeout = setTimeout(() => {
+      cycleNext();
+    }, INITIAL_DELAY);
+
+    const interval = setInterval(() => {      if (!isTransitioningRef.current) {
+        cycleNext();
+      }
+    }, ROTATION_INTERVAL * 1000);
+
+    return () => {
+      clearTimeout(startTimeout);
+      clearInterval(interval);
+    };
+  }, [cycleNext]);
+
+  // Re-trigger animation after resize so tiles repopulate
+  useEffect(() => {
+    let resizeTimer: ReturnType<typeof setTimeout>;
+
+    const handleResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        isTransitioningRef.current = false;
+        cycleNext();
+      }, 500);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      clearTimeout(resizeTimer);
+    };
+  }, [cycleNext]);
+  return (
+    <main
+      style={{
+        position: "fixed",
+        inset: 0,
+        overflow: "hidden",
+        background: "#000",
+      }}
+    >
+      {/* LAYER 1: Full-screen split-flap tile grid */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 1 }}>
+        <FullScreenBoard ref={boardRef} initialBoard={initialBoard} />
+      </div>
+
+      {/* LAYER 2: Content overlay */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          zIndex: 2,
+          pointerEvents: "none",
+        }}
+      >
+        {/* Countdown timer — 22% from top */}
+        <div
+          style={{
+            position: "absolute",
+            top: "22%",            left: "50%",
+            transform: "translate(-50%, -50%)",
+            pointerEvents: "auto",
+          }}
+        >
+          <CountdownTimer />
+        </div>
+
+        {/* Email / Phone capture — 75% from top */}
+        <div
+          style={{
+            position: "absolute",
+            top: "75%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            pointerEvents: "auto",
+            width: "100%",
+            maxWidth: "360px",
+            padding: "0 24px",
+          }}
+        >
+          <EmailCapture />
+        </div>
+      </div>
+    </main>
+  );
+}

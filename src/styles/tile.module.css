@@ -1,0 +1,142 @@
+.tile {
+  width: var(--tile-width);
+  height: var(--tile-height);
+  position: relative;
+  perspective: 600px;
+  overflow: hidden;
+  font-family: var(--font-geist-mono), "SF Mono", "Fira Code", monospace;
+}
+
+.charDisplay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: var(--tile-font-size, 30px);
+  font-weight: 500;
+  color: var(--tile-text);
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  user-select: none;
+}
+
+.topHalf {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 50%;  overflow: hidden;
+  background: linear-gradient(180deg, var(--tile-bg-light) 0%, var(--tile-bg) 100%);
+  border-radius: var(--tile-radius) var(--tile-radius) 0 0;
+  box-shadow:
+    inset 0 1px 0 var(--tile-highlight),
+    inset 0 -1px 0 var(--tile-split);
+  z-index: 1;
+}
+
+.topHalf .charDisplay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 200%;
+}
+
+.bottomHalf {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--tile-bg) 0%, var(--tile-bg-darker) 100%);
+  border-radius: 0 0 var(--tile-radius) var(--tile-radius);
+  box-shadow:
+    inset 0 1px 0 var(--tile-split),
+    0 2px 4px var(--tile-shadow);
+  z-index: 1;
+}
+.bottomHalf .charDisplay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 200%;
+}
+
+.flapFront {
+  --flap-darken: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--tile-bg-light) 0%, var(--tile-bg) 100%);
+  border-radius: var(--tile-radius) var(--tile-radius) 0 0;
+  transform-origin: bottom center;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  z-index: 3;
+  box-shadow:
+    inset 0 1px 0 var(--tile-highlight),
+    0 1px 3px var(--tile-shadow);
+}
+
+.flapFront::after {
+  content: "";
+  position: absolute;  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.3) 100%);
+  opacity: var(--flap-darken);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.flapFront .charDisplay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 200%;
+}
+
+.flapBack {
+  --flap-brighten: 0;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--tile-bg) 0%, var(--tile-bg-darker) 100%);
+  border-radius: 0 0 var(--tile-radius) var(--tile-radius);
+  transform-origin: top center;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  transform: rotateX(90deg);
+  z-index: 2;
+  box-shadow:    inset 0 1px 0 var(--tile-split),
+    0 1px 3px var(--tile-shadow);
+}
+
+.flapBack::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.15) 100%);
+  opacity: var(--flap-brighten, 0);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.flapBack .charDisplay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 200%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flapFront,
+  .flapBack {
+    transition: none !important;
+  }
+}
