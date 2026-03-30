@@ -27,16 +27,18 @@ export interface FullScreenBoardRef {
 /**
  * A full-viewport split-flap board.
  * Dormant tiles fill the screen edge-to-edge.
- * The active 6x22 message area sits centered. */
+ * The active 6x22 message area sits centered.
+ *
+ * Horizontally: exactly (22 + sidePad*2) columns fill the viewport.
+ * Vertically: rows overflow to cover the full viewport height.
+ */
 const FullScreenBoard = forwardRef<FullScreenBoardRef, { initialBoard: BoardState }>(
   function FullScreenBoard({ initialBoard }, ref) {
-    const { cols: totalCols, rows: totalRows } = useGridDimensions();
+    const { cols: totalCols, rows: totalRows, sidePad } = useGridDimensions();
 
-    // Center the active 6x22 area in the middle of the grid.
-    // Math.ceil ensures the active area sits at or just below center,
-    // keeping equal padding toward the timer above and email below.
+    // Center the active 6x22 area
     const padTop = Math.ceil((totalRows - BOARD_ROWS) / 2);
-    const padLeft = Math.floor((totalCols - BOARD_COLS) / 2);
+    const padLeft = sidePad; // exact number of dormant columns on each side
 
     // Refs only for the active 6 rows
     const rowRefs = useRef<React.RefObject<SplitFlapRowRef | null>[]>(
@@ -85,7 +87,8 @@ const FullScreenBoard = forwardRef<FullScreenBoardRef, { initialBoard: BoardStat
 
         await Promise.all(flipPromises);
       },
-      []    );
+      []
+    );
 
     useImperativeHandle(ref, () => ({ transitionTo }), [transitionTo]);
 
@@ -114,7 +117,8 @@ const FullScreenBoard = forwardRef<FullScreenBoardRef, { initialBoard: BoardStat
 
             if (isActiveRow && isActiveCol) {
               if (activeColIndex === 0) {
-                return (                  <SplitFlapRow
+                return (
+                  <SplitFlapRow
                     key={`active-${activeRowIndex}`}
                     ref={rowRefs.current[activeRowIndex]}
                     rowIndex={activeRowIndex}
