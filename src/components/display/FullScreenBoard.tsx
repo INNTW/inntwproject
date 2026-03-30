@@ -26,19 +26,18 @@ export interface FullScreenBoardRef {
 
 /**
  * A full-viewport split-flap board.
- * Dormant tiles fill the screen edge-to-edge.
+ * Dormant tiles fill the entire screen edge-to-edge (no black gaps).
  * The active 6x22 message area sits centered.
- *
- * Horizontally: exactly (22 + sidePad*2) columns fill the viewport.
- * Vertically: rows overflow to cover the full viewport height.
+ * Tile SIZE is dictated by viewport breakpoints (bigger = more zoomed in),
+ * while the GRID always overflows the viewport in all directions.
  */
 const FullScreenBoard = forwardRef<FullScreenBoardRef, { initialBoard: BoardState }>(
   function FullScreenBoard({ initialBoard }, ref) {
-    const { cols: totalCols, rows: totalRows, sidePad } = useGridDimensions();
+    const { cols: totalCols, rows: totalRows } = useGridDimensions();
 
-    // Center the active 6x22 area
+    // Center the active 6x22 area in the overflow grid
     const padTop = Math.ceil((totalRows - BOARD_ROWS) / 2);
-    const padLeft = sidePad; // exact number of dormant columns on each side
+    const padLeft = Math.floor((totalCols - BOARD_COLS) / 2);
 
     // Refs only for the active 6 rows
     const rowRefs = useRef<React.RefObject<SplitFlapRowRef | null>[]>(

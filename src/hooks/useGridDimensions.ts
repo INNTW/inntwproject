@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { BOARD_COLS, BOARD_ROWS } from "@/lib/vestaboard/layout";
 
-// Increased max now that we have fewer columns to fill the viewport
+// Increased max now that fewer columns dictate tile size
 const MAX_TILE_WIDTH = 72;
 const TILE_ASPECT = 64 / 48; // height / width ratio
 const MAX_GAP = 3;
@@ -15,14 +15,13 @@ const VERTICAL_PADDING = 48;
 /**
  * Dynamically calculates tile size based on viewport and desired side padding.
  *
- * Side padding (dormant columns beside the active 22-col area):
- *   - Mobile  (<640px):  0 extra columns — text goes edge-to-edge
- *   - Tablet  (<1024px): 1 extra column on each side
- *   - Desktop (≥1024px): 2 extra columns on each side
+ * SIZING — how big tiles are (dictated by active cols + side padding):
+ *   - Mobile  (<640px):  22 cols (0 side pad) — text fills viewport width
+ *   - Tablet  (<1024px): 24 cols (1 side pad) — 1 dormant col each side
+ *   - Desktop (≥1024px): 26 cols (2 side pad) — 2 dormant cols each side
  *
- * Tiles are sized so that exactly (22 + sidePad*2) columns fill the viewport
- * width, making them significantly larger than before (especially on desktop).
- * The height constraint still ensures rows fit between the timer and email.
+ * GRID — always overflows the viewport in both directions so the board
+ * fills the entire screen edge-to-edge with no black gaps.
  */
 export function useGridDimensions() {
   const [dims, setDims] = useState({
@@ -31,32 +30,31 @@ export function useGridDimensions() {
     tileWidth: 48,
     tileHeight: 64,
     tileGap: MAX_GAP,
-    sidePad: 2,
   });
 
   const calculate = useCallback(() => {
     const vw = window.innerWidth;
     const vh = window.innerHeight;
 
-    // --- DYNAMIC SIDE PADDING ---
+    // --- DYNAMIC SIDE PADDING (for tile SIZING only) ---
     let sidePad: number;
     if (vw < 640) {
-      sidePad = 0; // mobile: active area edge-to-edge
+      sidePad = 0; // mobile: tiles sized so 22 active cols = viewport width
     } else if (vw < 1024) {
-      sidePad = 1; // tablet: 1 dormant column each side
+      sidePad = 1; // tablet: sized for 24 cols
     } else {
-      sidePad = 2; // desktop: 2 dormant columns each side
+      sidePad = 2; // desktop: sized for 26 cols
     }
 
-    const visibleCols = BOARD_COLS + sidePad * 2;
+    const sizingCols = BOARD_COLS + sidePad * 2;
 
     // --- WIDTH CONSTRAINT ---
-    // Fit exactly visibleCols tiles across the full viewport width
+    // Size tiles so that sizingCols fill the viewport width
     let gap = MAX_GAP;
-    let widthFit = Math.floor((vw - (visibleCols - 1) * gap) / visibleCols);
+    let widthFit = Math.floor((vw - (sizingCols - 1) * gap) / sizingCols);
     if (widthFit < 14) {
       gap = MIN_GAP;
-      widthFit = Math.floor((vw - (visibleCols - 1) * gap) / visibleCols);
+      widthFit = Math.floor((vw - (sizingCols - 1) * gap) / sizingCols);
     }
 
     // --- HEIGHT CONSTRAINT ---
@@ -86,12 +84,11 @@ export function useGridDimensions() {
     root.style.setProperty("--tile-font-size", `${fontSize}px`);
     root.style.setProperty("--tile-radius", `${radius}px`);
 
-    // Horizontal: exactly visibleCols (no side overflow)
-    const cols = visibleCols;
-    // Vertical: overflow to fill viewport top-to-bottom
+    // GRID: overflow viewport in both directions — no black edges ever
+    const cols = Math.ceil(vw / (tileWidth + tileGap)) + 2;
     const rows = Math.ceil(vh / (tileHeight + tileGap)) + 2;
 
-    setDims({ cols, rows, tileWidth, tileHeight, tileGap, sidePad });
+    setDims({ cols, rows, tileWidth, tileHeight, tileGap });
   }, []);
 
   useEffect(() => {
