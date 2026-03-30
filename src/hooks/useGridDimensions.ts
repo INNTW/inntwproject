@@ -3,33 +3,28 @@
 import { useState, useEffect, useCallback } from "react";
 import { BOARD_COLS, BOARD_ROWS } from "@/lib/vestaboard/layout";
 
-// Increased max now that fewer columns dictate tile size
 const MAX_TILE_WIDTH = 72;
-const TILE_ASPECT = 64 / 48; // height / width ratio
+const TILE_ASPECT = 64 / 48;
 const MAX_GAP = 3;
 const MIN_GAP = 1;
-
-// The active area must fit between the 25% and 75% marks of the viewport
 const VERTICAL_PADDING = 48;
 
 /**
  * Dynamically calculates tile size based on viewport width.
  *
- * SIZING COLUMNS — how many columns dictate the tile size (zoom level):
+ * SIZING COLUMNS — controls the "zoom level" (how big tiles appear):
  *   - Mobile     (<640px):  18 cols — inner content fills the screen
  *   - Tablet     (<1024px): 20 cols — 1 extra col each side of content
- *   - Laptop     (<1600px): 22 cols — 2 extra cols each side (full active area)
- *   - Ultra-wide (≥1600px): 24 cols — 3 extra cols each side
+ *   - Laptop     (<1600px): 22 cols — full active area visible
+ *   - Ultra-wide (≥1600px): 24 cols — extra breathing room
  *
- * On mobile, the active 22-col area is wider than the viewport — the outer
- * empty columns scroll off-screen while the 18 cols of text fill the screen.
- *
- * GRID — always overflows the viewport in all directions so dormant tiles
- * fill every pixel with no black gaps.
+ * GRID — always has enough columns/rows to overflow the viewport in all
+ * directions, with at least 2 dormant columns on each side of the active
+ * area. The active 22 columns are always perfectly centered.
  */
 export function useGridDimensions() {
   const [dims, setDims] = useState({
-    cols: 24,
+    cols: 26,
     rows: 6,
     tileWidth: 48,
     tileHeight: 64,
@@ -43,44 +38,42 @@ export function useGridDimensions() {
     // --- SIZING COLUMNS (controls zoom level) ---
     let sizingCols: number;
     if (vw < 640) {
-      sizingCols = 18; // mobile: inner 18 content cols = viewport width
+      sizingCols = 18;
     } else if (vw < 1024) {
-      sizingCols = 20; // tablet: 1 extra col each side
+      sizingCols = 20;
     } else if (vw < 1600) {
-      sizingCols = 22; // laptop: full 22-col active area fits
+      sizingCols = 22;
     } else {
-      sizingCols = 24; // ultra-wide: 1 extra dormant col each side
+      sizingCols = 24;
     }
 
-    // --- WIDTH CONSTRAINT ---
-    // Size tiles so that sizingCols fill the viewport width
+    // --- DETERMINE GAP ---
+    // Try MAX_GAP first; if tiles would be tiny, use MIN_GAP
     let gap = MAX_GAP;
     let widthFit = Math.floor((vw - (sizingCols - 1) * gap) / sizingCols);
-    if (widthFit < 14) {
+    if (widthFit < 20) {
       gap = MIN_GAP;
       widthFit = Math.floor((vw - (sizingCols - 1) * gap) / sizingCols);
     }
 
     // --- HEIGHT CONSTRAINT ---
-    // 6 rows must fit between the 25% and 75% viewport marks with padding
     const availableHeight = vh * 0.5 - VERTICAL_PADDING * 2;
     const heightFitTileH = Math.floor(
       (availableHeight - (BOARD_ROWS - 1) * gap) / BOARD_ROWS
     );
     const heightFit = Math.floor(heightFitTileH / TILE_ASPECT);
 
-    // Use the tighter constraint, capped at max
+    // Tighter of width/height, capped at max
     const tileWidth = Math.max(10, Math.min(MAX_TILE_WIDTH, widthFit, heightFit));
     const tileHeight = Math.round(tileWidth * TILE_ASPECT);
-    const tileGap = tileWidth < 20 ? MIN_GAP : gap;
+    // IMPORTANT: use the same gap that was used in the width calculation
+    const tileGap = gap;
 
-    // Font size scales proportionally (30px at 48px tile width)
+    // Font & radius scale proportionally
     const fontSize = Math.max(6, Math.round(tileWidth * 0.625));
-
-    // Border radius scales too
     const radius = tileWidth >= 30 ? 3 : tileWidth >= 20 ? 2 : 1;
 
-    // Write to CSS custom properties
+    // Write CSS custom properties
     const root = document.documentElement;
     root.style.setProperty("--tile-width", `${tileWidth}px`);
     root.style.setProperty("--tile-height", `${tileHeight}px`);
@@ -88,8 +81,14 @@ export function useGridDimensions() {
     root.style.setProperty("--tile-font-size", `${fontSize}px`);
     root.style.setProperty("--tile-radius", `${radius}px`);
 
-    // GRID: overflow viewport in both directions — no black edges ever
-    const cols = Math.ceil(vw / (tileWidth + tileGap)) + 2;
+    // --- GRID DIMENSIONS ---
+    // Must cover the full viewport AND have room for the 22-col active area
+    // with at least 2 dormant columns on each side (minimum 26 cols)
+    const cellSize = tileWidth + tileGap;
+    let cols = Math.max(BOARD_COLS + 4, Math.ceil(vw / cellSize) + 2);
+    // Ensure (cols - BOARD_COLS) is even so active area is perfectly centered
+    if ((cols - BOARD_COLS) % 2 !== 0) cols++;
+
     const rows = Math.ceil(vh / (tileHeight + tileGap)) + 2;
 
     setDims({ cols, rows, tileWidth, tileHeight, tileGap });
