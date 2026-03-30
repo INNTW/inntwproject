@@ -25,8 +25,12 @@ export default function HomePage() {
   const isTransitioningRef = useRef(false);
   const { audioEngine } = useAudioEngine();
   const rotatorRef = useRef(new ContentRotator(QUOTES));
+
+  // Sound only plays when this ref is true (during active transitions)
+  const soundEnabledRef = useRef(false);
+
   const onFlipStep = useCallback(() => {
-    if (audioEngine.initialized) {
+    if (audioEngine.initialized && soundEnabledRef.current) {
       audioEngine.playClack(Math.floor(Math.random() * 3));
     }
   }, [audioEngine]);
@@ -35,8 +39,10 @@ export default function HomePage() {
     async (lines: string[]) => {
       if (!boardRef.current || isTransitioningRef.current) return;
       isTransitioningRef.current = true;
+      soundEnabledRef.current = true; // enable sound during animation
       const target = formatLines(lines);
       await boardRef.current.transitionTo(target, FLIP_SPEED, STAGGER_DELAY, onFlipStep);
+      soundEnabledRef.current = false; // disable sound when animation ends
       isTransitioningRef.current = false;
     },
     [onFlipStep]
@@ -53,7 +59,8 @@ export default function HomePage() {
       cycleNext();
     }, INITIAL_DELAY);
 
-    const interval = setInterval(() => {      if (!isTransitioningRef.current) {
+    const interval = setInterval(() => {
+      if (!isTransitioningRef.current) {
         cycleNext();
       }
     }, ROTATION_INTERVAL * 1000);
@@ -82,6 +89,7 @@ export default function HomePage() {
       clearTimeout(resizeTimer);
     };
   }, [cycleNext]);
+
   return (
     <main
       style={{
@@ -109,7 +117,8 @@ export default function HomePage() {
         <div
           style={{
             position: "absolute",
-            top: "22%",            left: "50%",
+            top: "22%",
+            left: "50%",
             transform: "translate(-50%, -50%)",
             pointerEvents: "auto",
           }}
