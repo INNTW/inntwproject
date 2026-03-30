@@ -13,19 +13,23 @@ const MIN_GAP = 1;
 const VERTICAL_PADDING = 48;
 
 /**
- * Dynamically calculates tile size based on viewport and desired side padding.
+ * Dynamically calculates tile size based on viewport width.
  *
- * SIZING — how big tiles are (dictated by active cols + side padding):
- *   - Mobile  (<640px):  22 cols (0 side pad) — text fills viewport width
- *   - Tablet  (<1024px): 24 cols (1 side pad) — 1 dormant col each side
- *   - Desktop (≥1024px): 26 cols (2 side pad) — 2 dormant cols each side
+ * SIZING COLUMNS — how many columns dictate the tile size (zoom level):
+ *   - Mobile     (<640px):  18 cols — inner content fills the screen
+ *   - Tablet     (<1024px): 20 cols — 1 extra col each side of content
+ *   - Laptop     (<1600px): 22 cols — 2 extra cols each side (full active area)
+ *   - Ultra-wide (≥1600px): 24 cols — 3 extra cols each side
  *
- * GRID — always overflows the viewport in both directions so the board
- * fills the entire screen edge-to-edge with no black gaps.
+ * On mobile, the active 22-col area is wider than the viewport — the outer
+ * empty columns scroll off-screen while the 18 cols of text fill the screen.
+ *
+ * GRID — always overflows the viewport in all directions so dormant tiles
+ * fill every pixel with no black gaps.
  */
 export function useGridDimensions() {
   const [dims, setDims] = useState({
-    cols: 26,
+    cols: 24,
     rows: 6,
     tileWidth: 48,
     tileHeight: 64,
@@ -36,17 +40,17 @@ export function useGridDimensions() {
     const vw = window.innerWidth;
     const vh = window.innerHeight;
 
-    // --- DYNAMIC SIDE PADDING (for tile SIZING only) ---
-    let sidePad: number;
+    // --- SIZING COLUMNS (controls zoom level) ---
+    let sizingCols: number;
     if (vw < 640) {
-      sidePad = 0; // mobile: tiles sized so 22 active cols = viewport width
+      sizingCols = 18; // mobile: inner 18 content cols = viewport width
     } else if (vw < 1024) {
-      sidePad = 1; // tablet: sized for 24 cols
+      sizingCols = 20; // tablet: 1 extra col each side
+    } else if (vw < 1600) {
+      sizingCols = 22; // laptop: full 22-col active area fits
     } else {
-      sidePad = 2; // desktop: sized for 26 cols
+      sizingCols = 24; // ultra-wide: 1 extra dormant col each side
     }
-
-    const sizingCols = BOARD_COLS + sidePad * 2;
 
     // --- WIDTH CONSTRAINT ---
     // Size tiles so that sizingCols fill the viewport width
