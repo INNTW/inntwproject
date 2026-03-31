@@ -11,7 +11,7 @@ import { QUOTES } from "@/lib/content/quotes";
 import CountdownTimer from "@/components/CountdownTimer";
 import EmailCapture from "@/components/EmailCapture";
 import ParticleCanvas from "@/components/ParticleCanvas";
-import Image from "next/image";
+
 
 const FLIP_SPEED = 100;
 const STAGGER_DELAY = 10;
@@ -106,13 +106,16 @@ export default function HomePage() {
             pointerEvents: "none",
           }}
         >
-          <Image
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src="/inntw-logo.svg"
             alt="INNTW"
-            width={48}
-            height={48}
-            style={{ opacity: 0.9 }}
-            priority
+            style={{
+              width: "clamp(36px, 5vw, 56px)",
+              height: "auto",
+              opacity: 0.9,
+              filter: "drop-shadow(0 0 8px rgba(0,0,0,0.5))",
+            }}
           />
         </div>
 
