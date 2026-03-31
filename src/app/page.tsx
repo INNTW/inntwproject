@@ -10,10 +10,8 @@ import { ContentRotator } from "@/lib/content/content-rotator";
 import { QUOTES } from "@/lib/content/quotes";
 import CountdownTimer from "@/components/CountdownTimer";
 import EmailCapture from "@/components/EmailCapture";
+import ParticleCanvas from "@/components/ParticleCanvas";
 
-/**
- * DISPLAY SETTINGS
- */
 const FLIP_SPEED = 100;
 const STAGGER_DELAY = 10;
 const ROTATION_INTERVAL = 12;
@@ -25,8 +23,6 @@ export default function HomePage() {
   const isTransitioningRef = useRef(false);
   const { audioEngine } = useAudioEngine();
   const rotatorRef = useRef(new ContentRotator(QUOTES));
-
-  // Sound only plays when this ref is true (during active transitions)
   const soundEnabledRef = useRef(false);
 
   const onFlipStep = useCallback(() => {
@@ -39,10 +35,10 @@ export default function HomePage() {
     async (lines: string[]) => {
       if (!boardRef.current || isTransitioningRef.current) return;
       isTransitioningRef.current = true;
-      soundEnabledRef.current = true; // enable sound during animation
+      soundEnabledRef.current = true;
       const target = formatLines(lines);
       await boardRef.current.transitionTo(target, FLIP_SPEED, STAGGER_DELAY, onFlipStep);
-      soundEnabledRef.current = false; // disable sound when animation ends
+      soundEnabledRef.current = false;
       isTransitioningRef.current = false;
     },
     [onFlipStep]
@@ -53,28 +49,16 @@ export default function HomePage() {
     await showMessage(content.lines);
   }, [showMessage]);
 
-  // Start the rotation cycle + interval
   useEffect(() => {
-    const startTimeout = setTimeout(() => {
-      cycleNext();
-    }, INITIAL_DELAY);
-
+    const startTimeout = setTimeout(() => { cycleNext(); }, INITIAL_DELAY);
     const interval = setInterval(() => {
-      if (!isTransitioningRef.current) {
-        cycleNext();
-      }
+      if (!isTransitioningRef.current) cycleNext();
     }, ROTATION_INTERVAL * 1000);
-
-    return () => {
-      clearTimeout(startTimeout);
-      clearInterval(interval);
-    };
+    return () => { clearTimeout(startTimeout); clearInterval(interval); };
   }, [cycleNext]);
 
-  // Re-trigger animation after resize so tiles repopulate
   useEffect(() => {
     let resizeTimer: ReturnType<typeof setTimeout>;
-
     const handleResize = () => {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
@@ -82,12 +66,8 @@ export default function HomePage() {
         cycleNext();
       }, 500);
     };
-
     window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      clearTimeout(resizeTimer);
-    };
+    return () => { window.removeEventListener("resize", handleResize); clearTimeout(resizeTimer); };
   }, [cycleNext]);
 
   return (
@@ -104,16 +84,18 @@ export default function HomePage() {
         <FullScreenBoard ref={boardRef} initialBoard={initialBoard} />
       </div>
 
-      {/* LAYER 2: Content overlay */}
+      {/* LAYER 2: Particles — drift upward through tile gaps */}
+      <ParticleCanvas />
+
+      {/* LAYER 3: Content overlay */}
       <div
         style={{
           position: "absolute",
           inset: 0,
-          zIndex: 2,
+          zIndex: 3,
           pointerEvents: "none",
         }}
       >
-        {/* Countdown timer — 22% from top */}
         <div
           style={{
             position: "absolute",
@@ -126,7 +108,6 @@ export default function HomePage() {
           <CountdownTimer />
         </div>
 
-        {/* Email / Phone capture — 75% from top */}
         <div
           style={{
             position: "absolute",
