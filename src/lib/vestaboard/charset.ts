@@ -22,14 +22,6 @@ for (const [code, char] of Object.entries(CODE_TO_CHAR)) {
   CHAR_TO_CODE[char] = Number(code);
 }
 
-/**
- * FLIP SEQUENCES — what characters a tile cycles through during animation.
- *
- * Letters flip through A-Z only (no symbols).
- * Punctuation (. ? !) cycles between the three end-of-sentence marks.
- * Blank/space flips directly (no intermediate steps).
- */
-
 // Letters only: A(1) through Z(26)
 const LETTER_SEQUENCE: number[] = [
   1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
@@ -40,24 +32,15 @@ const LETTER_SEQUENCE: number[] = [
 // Punctuation cycle: period(56), question mark(60), exclamation(37)
 const PUNCTUATION_SEQUENCE: number[] = [56, 60, 37];
 
-// Set of codes that are letters (A-Z)
 const LETTER_CODES = new Set(LETTER_SEQUENCE);
-
-// Set of codes that are end-of-sentence punctuation
 const PUNCTUATION_CODES = new Set(PUNCTUATION_SEQUENCE);
-
-// Build index maps for fast lookup
-const LETTER_INDEX: Map<number, number> = new Map();
-LETTER_SEQUENCE.forEach((code, index) => {
-  LETTER_INDEX.set(code, index);
-});
 
 const PUNCTUATION_INDEX: Map<number, number> = new Map();
 PUNCTUATION_SEQUENCE.forEach((code, index) => {
   PUNCTUATION_INDEX.set(code, index);
 });
 
-// Legacy full sequence (kept for compatibility)
+// Legacy export (kept for compatibility)
 export const FLIP_SEQUENCE: number[] = [
   0,
   ...LETTER_SEQUENCE,
@@ -81,39 +64,38 @@ export function codeToChar(code: number): string {
 /**
  * Calculate the flip path between two character codes.
  *
- * - If target is a letter: flip through random letters (A-Z) before landing
- * - If target is punctuation (. ? !): cycle through . ? ! before landing
- * - If target is blank/space: flip directly (no intermediate)
- * - Otherwise: flip directly to the target
+ * Letters get 14-18 intermediate random A-Z characters before the target.
+ * Punctuation gets 6-8 cycles through . ? ! before landing.
+ * The animation speed per step is handled by transitionTo (deceleration curve).
  */
 export function calculateFlipPath(fromCode: number, toCode: number): number[] {
   if (fromCode === toCode) return [];
 
-  // If target is a letter, flip through a few random letters then land
+  // Letters: many intermediate flips for the deceleration effect
   if (LETTER_CODES.has(toCode)) {
     const steps: number[] = [];
-    const numFlips = 3 + Math.floor(Math.random() * 4); // 3-6 intermediate letters
+    const numFlips = 14 + Math.floor(Math.random() * 5); // 14-18 intermediate letters
 
     for (let i = 0; i < numFlips; i++) {
       let randomCode: number;
       do {
         randomCode = LETTER_SEQUENCE[Math.floor(Math.random() * LETTER_SEQUENCE.length)];
-      } while (randomCode === toCode || (steps.length > 0 && randomCode === steps[steps.length - 1]));
+      } while (
+        randomCode === toCode ||
+        (steps.length > 0 && randomCode === steps[steps.length - 1])
+      );
       steps.push(randomCode);
     }
 
-    // Always end on the target
     steps.push(toCode);
     return steps;
   }
 
-  // If target is punctuation (. ? !), cycle through the three marks
+  // Punctuation: more cycles for the deceleration to feel right
   if (PUNCTUATION_CODES.has(toCode)) {
     const steps: number[] = [];
     const toIdx = PUNCTUATION_INDEX.get(toCode) ?? 0;
-
-    // Cycle through 2-3 punctuation marks before landing
-    const numCycles = 2 + Math.floor(Math.random() * 2);
+    const numCycles = 6 + Math.floor(Math.random() * 3); // 6-8 cycles
     let idx = (toIdx + 1) % PUNCTUATION_SEQUENCE.length;
 
     for (let i = 0; i < numCycles; i++) {
@@ -125,10 +107,7 @@ export function calculateFlipPath(fromCode: number, toCode: number): number[] {
     return steps;
   }
 
-  // For blank/space or any other character, go directly
-  if (toCode === BLANK) {
-    return [BLANK];
-  }
-
+  // Blank/other: direct
+  if (toCode === BLANK) return [BLANK];
   return [toCode];
 }

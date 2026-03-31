@@ -25,21 +25,36 @@ export interface FullScreenBoardRef {
 }
 
 /**
- * A full-viewport split-flap board.
- * Dormant tiles fill the entire screen edge-to-edge (no black gaps).
- * The active 6x22 message area sits centered.
- * Tile SIZE is dictated by viewport breakpoints (bigger = more zoomed in),
- * while the GRID always overflows the viewport in all directions.
+ * Deceleration curve for flip animation.
+ *
+ * Each flip in the sequence gets progressively slower, creating a
+ * natural "winding down" effect like a real mechanical split-flap board.
+ *
+ * @param stepIndex   Current step (0 = first flip)
+ * @param totalSteps  Total number of flips in the path
+ * @param minDuration Fastest flip speed (ms) — used at the start
+ * @param maxDuration Slowest flip speed (ms) — used at the end
  */
+function deceleratingDuration(
+  stepIndex: number,
+  totalSteps: number,
+  minDuration: number,
+  maxDuration: number
+): number {
+  if (totalSteps <= 1) return maxDuration;
+  // Cubic ease-out: starts fast, smoothly decelerates to final speed
+  const t = stepIndex / (totalSteps - 1); // 0 → 1
+  const eased = t * t * t; // cubic curve
+  return minDuration + (maxDuration - minDuration) * eased;
+}
+
 const FullScreenBoard = forwardRef<FullScreenBoardRef, { initialBoard: BoardState }>(
   function FullScreenBoard({ initialBoard }, ref) {
     const { cols: totalCols, rows: totalRows } = useGridDimensions();
 
-    // Center the active 6x22 area in the overflow grid
     const padTop = Math.ceil((totalRows - BOARD_ROWS) / 2);
     const padLeft = Math.floor((totalCols - BOARD_COLS) / 2);
 
-    // Refs only for the active 6 rows
     const rowRefs = useRef<React.RefObject<SplitFlapRowRef | null>[]>(
       Array.from({ length: BOARD_ROWS }, () => createRef<SplitFlapRowRef>())
     );
@@ -52,6 +67,10 @@ const FullScreenBoard = forwardRef<FullScreenBoardRef, { initialBoard: BoardStat
         onFlipStep?: (row: number, col: number) => void
       ) => {
         const flipPromises: Promise<void>[] = [];
+
+        // Deceleration parameters
+        const MIN_FLIP_MS = 60;  // fastest flip (start of sequence)
+        const MAX_FLIP_MS = 280; // slowest flip (final landing)
 
         for (let row = 0; row < BOARD_ROWS; row++) {
           for (let col = 0; col < BOARD_COLS; col++) {
@@ -74,9 +93,16 @@ const FullScreenBoard = forwardRef<FullScreenBoardRef, { initialBoard: BoardStat
 
             const flipTile = async () => {
               await new Promise((r) => setTimeout(r, Math.max(0, delay)));
-              for (const stepCode of flipPath) {
+              const totalSteps = flipPath.length;
+              for (let s = 0; s < totalSteps; s++) {
                 onFlipStep?.(row, col);
-                await tileRef.flipTo(stepCode, flipSpeed);
+                const duration = deceleratingDuration(
+                  s,
+                  totalSteps,
+                  MIN_FLIP_MS,
+                  MAX_FLIP_MS
+                );
+                await tileRef.flipTo(flipPath[s], duration);
               }
             };
 
@@ -91,7 +117,6 @@ const FullScreenBoard = forwardRef<FullScreenBoardRef, { initialBoard: BoardStat
 
     useImperativeHandle(ref, () => ({ transitionTo }), [transitionTo]);
 
-    // Build the full grid: dormant tiles everywhere, active tiles in the center
     return (
       <div
         style={{
