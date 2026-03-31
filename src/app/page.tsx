@@ -11,6 +11,7 @@ import { QUOTES } from "@/lib/content/quotes";
 import CountdownTimer from "@/components/CountdownTimer";
 import EmailCapture from "@/components/EmailCapture";
 import ParticleCanvas from "@/components/ParticleCanvas";
+import Image from "next/image";
 
 const FLIP_SPEED = 100;
 const STAGGER_DELAY = 10;
@@ -96,6 +97,25 @@ export default function HomePage() {
           pointerEvents: "none",
         }}
       >
+        <div
+          style={{
+            position: "absolute",
+            top: "10%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            pointerEvents: "none",
+          }}
+        >
+          <Image
+            src="/inntw-logo.svg"
+            alt="INNTW"
+            width={48}
+            height={48}
+            style={{ opacity: 0.9 }}
+            priority
+          />
+        </div>
+
         <div
           style={{
             position: "absolute",
