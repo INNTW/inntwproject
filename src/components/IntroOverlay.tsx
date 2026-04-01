@@ -6,7 +6,10 @@ interface IntroOverlayProps {
   onEnter: () => void;
 }
 
-/* Radiating ring that expands outward from the button and fades */
+/* Fixed-size square container ensures perfect circles */
+const RING_SIZE = 140; // px — base size for the ring container
+
+/* Radiating ring: uses fixed pixel width/height so it's always a perfect circle */
 function PulseRing({ delay, duration }: { delay: number; duration: number }) {
   return (
     <span
@@ -14,8 +17,8 @@ function PulseRing({ delay, duration }: { delay: number; duration: number }) {
         position: "absolute",
         top: "50%",
         left: "50%",
-        width: "100%",
-        height: "100%",
+        width: `${RING_SIZE}px`,
+        height: `${RING_SIZE}px`,
         borderRadius: "50%",
         border: "1px solid rgba(255,255,255,0.35)",
         transform: "translate(-50%, -50%) scale(1)",
@@ -28,12 +31,10 @@ function PulseRing({ delay, duration }: { delay: number; duration: number }) {
 
 export default function IntroOverlay({ onEnter }: IntroOverlayProps) {
   const [exiting, setExiting] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [collapsingDone, setCollapsingDone] = useState(false);
   const styleRef = useRef<HTMLStyleElement | null>(null);
 
-  // Inject the keyframe animation on mount
   useEffect(() => {
-    setMounted(true);
     const style = document.createElement("style");
     style.textContent = `
       @keyframes pulseExpand {
@@ -42,8 +43,21 @@ export default function IntroOverlay({ onEnter }: IntroOverlayProps) {
           opacity: 0.5;
         }
         100% {
-          transform: translate(-50%, -50%) scale(8);
+          transform: translate(-50%, -50%) scale(12);
           opacity: 0;
+        }
+      }
+      @keyframes collapseIn {
+        0% {
+          transform: translate(-50%, -50%) scale(20);
+          opacity: 0;
+        }
+        30% {
+          opacity: 0.6;
+        }
+        100% {
+          transform: translate(-50%, -50%) scale(0);
+          opacity: 0.8;
         }
       }
     `;
@@ -59,9 +73,13 @@ export default function IntroOverlay({ onEnter }: IntroOverlayProps) {
   const handleClick = useCallback(() => {
     if (exiting) return;
     setExiting(true);
+    // Wait for the collapse animation to finish, then dismiss
     setTimeout(() => {
-      onEnter();
-    }, 600);
+      setCollapsingDone(true);
+      setTimeout(() => {
+        onEnter();
+      }, 300);
+    }, 900);
   }, [onEnter, exiting]);
 
   return (
@@ -76,13 +94,13 @@ export default function IntroOverlay({ onEnter }: IntroOverlayProps) {
         alignItems: "center",
         justifyContent: "center",
         cursor: "pointer",
-        transition: "opacity 0.6s ease",
-        opacity: exiting ? 0 : 1,
-        pointerEvents: exiting ? "none" : "auto",
+        transition: collapsingDone ? "opacity 0.3s ease" : "none",
+        opacity: collapsingDone ? 0 : 1,
+        pointerEvents: collapsingDone ? "none" : "auto",
       }}
       onClick={handleClick}
     >
-      {/* Center: Logo in circle with pulsating rings */}
+      {/* Center container — fixed square so rings are perfect circles */}
       <div
         style={{
           position: "relative",
@@ -90,59 +108,65 @@ export default function IntroOverlay({ onEnter }: IntroOverlayProps) {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
+          width: `${RING_SIZE}px`,
+          height: `${RING_SIZE}px`,
         }}
       >
-        {/* Pulsating rings */}
-        <PulseRing delay={0} duration={3} />
-        <PulseRing delay={0.8} duration={3} />
-        <PulseRing delay={1.6} duration={3} />
+        {/* Pulsating rings — only show when not exiting */}
+        {!exiting && (
+          <>
+            <PulseRing delay={0} duration={3} />
+            <PulseRing delay={0.8} duration={3} />
+            <PulseRing delay={1.6} duration={3} />
+          </>
+        )}
 
-        {/* The circle with logo inside */}
-        <div
-          style={{
-            width: "clamp(120px, 16vw, 180px)",
-            height: "clamp(120px, 16vw, 180px)",
-            borderRadius: "50%",
-            border: "1px solid rgba(255,255,255,0.25)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "transparent",
-            transition: "border-color 0.3s ease, transform 0.6s ease, opacity 0.6s ease",
-            transform: exiting ? "scale(1.2)" : "scale(1)",
-            opacity: exiting ? 0 : 1,
-            zIndex: 1,
-            padding: "20%",
-          }}
-        >
-          <img
-            src="/inntw-logo-white.svg"
-            alt="If Not Now Then When"
+        {/* Collapsing ring — appears on click, shrinks from outside screen to center */}
+        {exiting && !collapsingDone && (
+          <span
             style={{
-              width: "100%",
-              height: "auto",
-              opacity: 0.85,
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              width: `${RING_SIZE}px`,
+              height: `${RING_SIZE}px`,
+              borderRadius: "50%",
+              border: "2px solid rgba(255,255,255,0.6)",
+              animation: "collapseIn 0.9s ease-in forwards",
+              pointerEvents: "none",
             }}
           />
-        </div>
+        )}
 
-        {/* "Click to enter" text below the circle */}
-        <p
+        {/* Logo — no circle border, just the logo */}
+        <img
+          src="/inntw-logo-white.svg"
+          alt="If Not Now Then When"
           style={{
-            fontFamily: "var(--font-geist-mono), monospace",
-            fontSize: "clamp(9px, 0.9vw, 12px)",
-            letterSpacing: "0.2em",
-            color: "rgba(255,255,255,0.3)",
-            textTransform: "uppercase",
-            marginTop: "clamp(16px, 2.5vh, 28px)",
-            transition: "opacity 0.4s ease",
-            opacity: exiting ? 0 : 1,
+            width: "clamp(80px, 11vw, 120px)",
+            height: "auto",
+            opacity: 0.85,
             zIndex: 1,
+            transition: "opacity 0.3s ease",
           }}
-        >
-          Click to enter
-        </p>
+        />
       </div>
+
+      {/* "Click to enter" text below */}
+      <p
+        style={{
+          fontFamily: "var(--font-geist-mono), monospace",
+          fontSize: "clamp(9px, 0.9vw, 12px)",
+          letterSpacing: "0.2em",
+          color: "rgba(255,255,255,0.3)",
+          textTransform: "uppercase",
+          marginTop: "clamp(20px, 3vh, 36px)",
+          transition: "opacity 0.3s ease",
+          opacity: exiting ? 0 : 1,
+        }}
+      >
+        Click to enter
+      </p>
     </div>
   );
 }
