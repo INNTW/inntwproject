@@ -10,7 +10,8 @@ export interface MusicToggleRef {
 const MusicToggle = forwardRef<MusicToggleRef>(function MusicToggle(_, ref) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [soundOn, setSoundOn] = useState(true);
-  const soundOnRef = useRef(true); // ref mirror so the visibility handler always has current value
+  const soundOnRef = useRef(true);
+  const toggleRef = useRef(() => {});
 
   useImperativeHandle(ref, () => ({
     start() {
@@ -28,11 +29,9 @@ const MusicToggle = forwardRef<MusicToggleRef>(function MusicToggle(_, ref) {
       if (!audio) return;
 
       if (document.hidden) {
-        // Tab hidden — pause music and mute clacks
         audio.pause();
         audioEngine.setMuted(true);
       } else {
-        // Tab visible — only resume if user hasn't manually muted
         if (soundOnRef.current) {
           audio.play().catch(() => {});
           audioEngine.setMuted(false);
@@ -46,8 +45,24 @@ const MusicToggle = forwardRef<MusicToggleRef>(function MusicToggle(_, ref) {
     };
   }, []);
 
+  // Spacebar toggles sound — but not when focused on an input field
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code !== "Space") return;
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      e.preventDefault(); // prevent page scroll
+      toggleRef.current();
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   const toggle = useCallback(() => {
-    const newState = !soundOn;
+    const newState = !soundOnRef.current;
     setSoundOn(newState);
     soundOnRef.current = newState;
 
@@ -61,7 +76,10 @@ const MusicToggle = forwardRef<MusicToggleRef>(function MusicToggle(_, ref) {
     }
 
     audioEngine.setMuted(!newState);
-  }, [soundOn]);
+  }, []);
+
+  // Keep toggleRef in sync so the keydown handler always calls the latest toggle
+  toggleRef.current = toggle;
 
   return (
     <>
