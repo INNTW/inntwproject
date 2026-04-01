@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 
 const CONSENT_TEXT =
-  "I agree to receive communications from INNTW, Inc. I understand that I may unsubscribe at any time.";
+  "I agree to receive communications from If Not Now Then When Inc. I understand that I may unsubscribe at any time.";
 
 const inputStyle: React.CSSProperties = {
   background: "transparent",
