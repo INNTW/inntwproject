@@ -1,26 +1,50 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { audioEngine } from "@/lib/audio/audio-engine";
 
 export default function MusicToggle() {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [playing, setPlaying] = useState(false);
+  // Default to "on" — sound is enabled
+  const [soundOn, setSoundOn] = useState(true);
+  const hasStartedRef = useRef(false);
+
+  // On first user interaction, start the music if sound is on
+  useEffect(() => {
+    const startAudio = () => {
+      if (hasStartedRef.current) return;
+      hasStartedRef.current = true;
+      if (soundOn && audioRef.current) {
+        audioRef.current.play().catch(() => {});
+      }
+    };
+    document.addEventListener("click", startAudio, { once: true });
+    document.addEventListener("touchstart", startAudio, { once: true });
+    document.addEventListener("keydown", startAudio, { once: true });
+    return () => {
+      document.removeEventListener("click", startAudio);
+      document.removeEventListener("touchstart", startAudio);
+      document.removeEventListener("keydown", startAudio);
+    };
+  }, [soundOn]);
 
   const toggle = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
+    const newState = !soundOn;
+    setSoundOn(newState);
 
-    if (playing) {
-      audio.pause();
-      setPlaying(false);
-    } else {
-      audio.play().then(() => {
-        setPlaying(true);
-      }).catch((err) => {
-        console.error("Audio play failed:", err);
-      });
+    // Control background music
+    const audio = audioRef.current;
+    if (audio) {
+      if (newState) {
+        audio.play().catch(() => {});
+      } else {
+        audio.pause();
+      }
     }
-  }, [playing]);
+
+    // Control split-flap clack sounds
+    audioEngine.setMuted(!newState);
+  }, [soundOn]);
 
   return (
     <>
@@ -32,7 +56,7 @@ export default function MusicToggle() {
       />
       <button
         onClick={toggle}
-        aria-label={playing ? "Mute music" : "Unmute music"}
+        aria-label={soundOn ? "Mute all sound" : "Unmute all sound"}
         style={{
           background: "transparent",
           border: "1px solid rgba(255,255,255,0.2)",
@@ -56,8 +80,7 @@ export default function MusicToggle() {
           e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)";
         }}
       >
-        {playing ? (
-          /* Speaker with sound waves — unmuted */
+        {soundOn ? (
           <svg
             width="16"
             height="16"
@@ -73,7 +96,6 @@ export default function MusicToggle() {
             <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
           </svg>
         ) : (
-          /* Speaker with X — muted */
           <svg
             width="16"
             height="16"

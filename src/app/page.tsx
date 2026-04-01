@@ -109,6 +109,28 @@ export default function HomePage() {
         >
           <MusicToggle />
         </div>
+        {/* Logo — centered between top and timer */}
+        <div
+          style={{
+            position: "absolute",
+            top: "11%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            pointerEvents: "none",
+          }}
+        >
+          <img
+            src="/inntw-logo-white.svg"
+            alt="INNTW"
+            style={{
+              width: "clamp(36px, 5vw, 56px)",
+              height: "auto",
+              opacity: 0.9,
+              filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.5))",
+            }}
+          />
+        </div>
+
         <div
           style={{
             position: "absolute",
