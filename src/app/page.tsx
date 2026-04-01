@@ -11,6 +11,7 @@ import { QUOTES } from "@/lib/content/quotes";
 import CountdownTimer from "@/components/CountdownTimer";
 import EmailCapture from "@/components/EmailCapture";
 import ParticleCanvas from "@/components/ParticleCanvas";
+import MusicToggle from "@/components/MusicToggle";
 
 
 const FLIP_SPEED = 100;
@@ -97,28 +98,17 @@ export default function HomePage() {
           pointerEvents: "none",
         }}
       >
+        {/* Music toggle — top right */}
         <div
           style={{
             position: "absolute",
-            top: "10%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            pointerEvents: "none",
+            top: "20px",
+            right: "20px",
+            pointerEvents: "auto",
           }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/inntw-logo.svg"
-            alt="INNTW"
-            style={{
-              width: "clamp(36px, 5vw, 56px)",
-              height: "auto",
-              opacity: 0.9,
-              filter: "drop-shadow(0 0 8px rgba(0,0,0,0.5))",
-            }}
-          />
+          <MusicToggle />
         </div>
-
         <div
           style={{
             position: "absolute",
