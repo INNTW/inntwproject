@@ -1,32 +1,25 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
 import { audioEngine } from "@/lib/audio/audio-engine";
 
-export default function MusicToggle() {
-  const audioRef = useRef<HTMLAudioElement>(null);
-  // Default to "on" — sound is enabled
-  const [soundOn, setSoundOn] = useState(true);
-  const hasStartedRef = useRef(false);
+export interface MusicToggleRef {
+  start: () => void;
+}
 
-  // On first user interaction, start the music if sound is on
-  useEffect(() => {
-    const startAudio = () => {
-      if (hasStartedRef.current) return;
-      hasStartedRef.current = true;
-      if (soundOn && audioRef.current) {
-        audioRef.current.play().catch(() => {});
+const MusicToggle = forwardRef<MusicToggleRef>(function MusicToggle(_, ref) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [soundOn, setSoundOn] = useState(true);
+
+  // Expose start() so the parent can trigger playback after user interaction
+  useImperativeHandle(ref, () => ({
+    start() {
+      const audio = audioRef.current;
+      if (audio) {
+        audio.play().catch(() => {});
       }
-    };
-    document.addEventListener("click", startAudio, { once: true });
-    document.addEventListener("touchstart", startAudio, { once: true });
-    document.addEventListener("keydown", startAudio, { once: true });
-    return () => {
-      document.removeEventListener("click", startAudio);
-      document.removeEventListener("touchstart", startAudio);
-      document.removeEventListener("keydown", startAudio);
-    };
-  }, [soundOn]);
+    },
+  }));
 
   const toggle = useCallback(() => {
     const newState = !soundOn;
@@ -114,4 +107,6 @@ export default function MusicToggle() {
       </button>
     </>
   );
-}
+});
+
+export default MusicToggle;

@@ -12,12 +12,12 @@ import CountdownTimer from "@/components/CountdownTimer";
 import EmailCapture from "@/components/EmailCapture";
 import ParticleCanvas from "@/components/ParticleCanvas";
 import MusicToggle from "@/components/MusicToggle";
+import IntroOverlay from "@/components/IntroOverlay";
 
 
 const FLIP_SPEED = 100;
 const STAGGER_DELAY = 10;
 const ROTATION_INTERVAL = 12;
-const INITIAL_DELAY = 800;
 
 export default function HomePage() {
   const boardRef = useRef<FullScreenBoardRef>(null);
@@ -26,6 +26,8 @@ export default function HomePage() {
   const { audioEngine } = useAudioEngine();
   const rotatorRef = useRef(new ContentRotator(QUOTES));
   const soundEnabledRef = useRef(false);
+  const [entered, setEntered] = useState(false);
+  const musicToggleRef = useRef<{ start: () => void }>(null);
 
   const onFlipStep = useCallback(() => {
     if (audioEngine.initialized && soundEnabledRef.current) {
@@ -51,17 +53,21 @@ export default function HomePage() {
     await showMessage(content.lines);
   }, [showMessage]);
 
+  // Only start the board cycle + interval after the user enters
   useEffect(() => {
-    const startTimeout = setTimeout(() => { cycleNext(); }, INITIAL_DELAY);
+    if (!entered) return;
+    // Kick off the first flip after a short delay
+    const startTimeout = setTimeout(() => { cycleNext(); }, 400);
     const interval = setInterval(() => {
       if (!isTransitioningRef.current) cycleNext();
     }, ROTATION_INTERVAL * 1000);
     return () => { clearTimeout(startTimeout); clearInterval(interval); };
-  }, [cycleNext]);
+  }, [entered, cycleNext]);
 
   useEffect(() => {
     let resizeTimer: ReturnType<typeof setTimeout>;
     const handleResize = () => {
+      if (!entered) return;
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
         isTransitioningRef.current = false;
@@ -70,7 +76,16 @@ export default function HomePage() {
     };
     window.addEventListener("resize", handleResize);
     return () => { window.removeEventListener("resize", handleResize); clearTimeout(resizeTimer); };
-  }, [cycleNext]);
+  }, [entered, cycleNext]);
+
+  const handleEnter = useCallback(() => {
+    // Initialize the clack audio engine
+    audioEngine.initialize();
+    // Start the background music
+    musicToggleRef.current?.start();
+    // Reveal the experience
+    setEntered(true);
+  }, [audioEngine]);
 
   return (
     <main
@@ -81,6 +96,9 @@ export default function HomePage() {
         background: "#000",
       }}
     >
+      {/* Intro overlay — shown until user taps */}
+      {!entered && <IntroOverlay onEnter={handleEnter} />}
+
       {/* LAYER 1: Full-screen split-flap tile grid */}
       <div style={{ position: "absolute", inset: 0, zIndex: 1 }}>
         <FullScreenBoard ref={boardRef} initialBoard={initialBoard} />
@@ -96,6 +114,8 @@ export default function HomePage() {
           inset: 0,
           zIndex: 3,
           pointerEvents: "none",
+          transition: "opacity 0.8s ease 0.3s",
+          opacity: entered ? 1 : 0,
         }}
       >
         {/* Music toggle — top right */}
@@ -107,7 +127,7 @@ export default function HomePage() {
             pointerEvents: "auto",
           }}
         >
-          <MusicToggle />
+          <MusicToggle ref={musicToggleRef} />
         </div>
         {/* Logo — centered between top and timer */}
         <div
