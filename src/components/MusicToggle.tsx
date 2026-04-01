@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
+import { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from "react";
 import { audioEngine } from "@/lib/audio/audio-engine";
 
 export interface MusicToggleRef {
@@ -10,8 +10,8 @@ export interface MusicToggleRef {
 const MusicToggle = forwardRef<MusicToggleRef>(function MusicToggle(_, ref) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [soundOn, setSoundOn] = useState(true);
+  const soundOnRef = useRef(true); // ref mirror so the visibility handler always has current value
 
-  // Expose start() so the parent can trigger playback after user interaction
   useImperativeHandle(ref, () => ({
     start() {
       const audio = audioRef.current;
@@ -21,11 +21,36 @@ const MusicToggle = forwardRef<MusicToggleRef>(function MusicToggle(_, ref) {
     },
   }));
 
+  // Pause/resume when the tab becomes hidden/visible
+  useEffect(() => {
+    const handleVisibility = () => {
+      const audio = audioRef.current;
+      if (!audio) return;
+
+      if (document.hidden) {
+        // Tab hidden — pause music and mute clacks
+        audio.pause();
+        audioEngine.setMuted(true);
+      } else {
+        // Tab visible — only resume if user hasn't manually muted
+        if (soundOnRef.current) {
+          audio.play().catch(() => {});
+          audioEngine.setMuted(false);
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, []);
+
   const toggle = useCallback(() => {
     const newState = !soundOn;
     setSoundOn(newState);
+    soundOnRef.current = newState;
 
-    // Control background music
     const audio = audioRef.current;
     if (audio) {
       if (newState) {
@@ -35,7 +60,6 @@ const MusicToggle = forwardRef<MusicToggleRef>(function MusicToggle(_, ref) {
       }
     }
 
-    // Control split-flap clack sounds
     audioEngine.setMuted(!newState);
   }, [soundOn]);
 
