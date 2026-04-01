@@ -82,34 +82,12 @@ export default function IntroOverlay({ onEnter }: IntroOverlayProps) {
       }}
       onClick={handleClick}
     >
-      {/* Logo at top */}
-      <div
-        style={{
-          position: "absolute",
-          top: "clamp(32px, 8vh, 64px)",
-          left: "50%",
-          transform: "translateX(-50%)",
-          transition: "opacity 0.8s ease, transform 0.8s ease",
-          opacity: mounted && !exiting ? 1 : 0,
-          transitionDelay: "0.2s",
-        }}
-      >
-        <img
-          src="/inntw-logo-white.svg"
-          alt="If Not Now Then When"
-          style={{
-            width: "clamp(80px, 12vw, 140px)",
-            height: "auto",
-            opacity: 0.9,
-          }}
-        />
-      </div>
-
-      {/* Center: ENTER button with pulsating rings */}
+      {/* Center: Logo in circle with pulsating rings */}
       <div
         style={{
           position: "relative",
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
         }}
@@ -119,11 +97,11 @@ export default function IntroOverlay({ onEnter }: IntroOverlayProps) {
         <PulseRing delay={0.8} duration={3} />
         <PulseRing delay={1.6} duration={3} />
 
-        {/* The button itself */}
+        {/* The circle with logo inside */}
         <div
           style={{
-            width: "clamp(100px, 14vw, 140px)",
-            height: "clamp(100px, 14vw, 140px)",
+            width: "clamp(120px, 16vw, 180px)",
+            height: "clamp(120px, 16vw, 180px)",
             borderRadius: "50%",
             border: "1px solid rgba(255,255,255,0.25)",
             display: "flex",
@@ -134,20 +112,36 @@ export default function IntroOverlay({ onEnter }: IntroOverlayProps) {
             transform: exiting ? "scale(1.2)" : "scale(1)",
             opacity: exiting ? 0 : 1,
             zIndex: 1,
+            padding: "20%",
           }}
         >
-          <span
+          <img
+            src="/inntw-logo-white.svg"
+            alt="If Not Now Then When"
             style={{
-              fontFamily: "var(--font-geist-mono), monospace",
-              fontSize: "clamp(11px, 1.2vw, 15px)",
-              letterSpacing: "0.25em",
-              color: "rgba(255,255,255,0.7)",
-              textTransform: "uppercase",
+              width: "100%",
+              height: "auto",
+              opacity: 0.85,
             }}
-          >
-            ENTER
-          </span>
+          />
         </div>
+
+        {/* "Click to enter" text below the circle */}
+        <p
+          style={{
+            fontFamily: "var(--font-geist-mono), monospace",
+            fontSize: "clamp(9px, 0.9vw, 12px)",
+            letterSpacing: "0.2em",
+            color: "rgba(255,255,255,0.3)",
+            textTransform: "uppercase",
+            marginTop: "clamp(16px, 2.5vh, 28px)",
+            transition: "opacity 0.4s ease",
+            opacity: exiting ? 0 : 1,
+            zIndex: 1,
+          }}
+        >
+          Click to enter
+        </p>
       </div>
     </div>
   );
