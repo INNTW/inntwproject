@@ -9,7 +9,7 @@ class AudioEngine {
   private gainNode: GainNode | null = null;
   private buffers: AudioBuffer[] = [];
   private _initialized = false;
-  private _volume = 0.375;
+  private _volume = 0.28;
   private _muted = false;
   private activeCount = 0;
   private lastPlayTime = 0;
