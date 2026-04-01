@@ -1,25 +1,71 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 
 interface IntroOverlayProps {
   onEnter: () => void;
 }
 
+/* Radiating ring that expands outward from the button and fades */
+function PulseRing({ delay, duration }: { delay: number; duration: number }) {
+  return (
+    <span
+      style={{
+        position: "absolute",
+        top: "50%",
+        left: "50%",
+        width: "100%",
+        height: "100%",
+        borderRadius: "50%",
+        border: "1px solid rgba(255,255,255,0.35)",
+        transform: "translate(-50%, -50%) scale(1)",
+        animation: `pulseExpand ${duration}s ease-out ${delay}s infinite`,
+        pointerEvents: "none",
+      }}
+    />
+  );
+}
+
 export default function IntroOverlay({ onEnter }: IntroOverlayProps) {
   const [exiting, setExiting] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const styleRef = useRef<HTMLStyleElement | null>(null);
+
+  // Inject the keyframe animation on mount
+  useEffect(() => {
+    setMounted(true);
+    const style = document.createElement("style");
+    style.textContent = `
+      @keyframes pulseExpand {
+        0% {
+          transform: translate(-50%, -50%) scale(1);
+          opacity: 0.5;
+        }
+        100% {
+          transform: translate(-50%, -50%) scale(8);
+          opacity: 0;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    styleRef.current = style;
+    return () => {
+      if (styleRef.current) {
+        document.head.removeChild(styleRef.current);
+      }
+    };
+  }, []);
 
   const handleClick = useCallback(() => {
+    if (exiting) return;
     setExiting(true);
-    // Small delay so the fade-out animation plays before we trigger everything
     setTimeout(() => {
       onEnter();
     }, 600);
-  }, [onEnter]);
+  }, [onEnter, exiting]);
 
   return (
     <div
-      onClick={handleClick}
       style={{
         position: "fixed",
         inset: 0,
@@ -34,42 +80,75 @@ export default function IntroOverlay({ onEnter }: IntroOverlayProps) {
         opacity: exiting ? 0 : 1,
         pointerEvents: exiting ? "none" : "auto",
       }}
+      onClick={handleClick}
     >
-      {/* The question */}
-      <h1
+      {/* Logo at top */}
+      <div
         style={{
-          fontFamily: "var(--font-geist-sans), sans-serif",
-          fontSize: "clamp(28px, 5vw, 56px)",
-          fontWeight: 300,
-          letterSpacing: "0.15em",
-          color: "rgba(255,255,255,0.85)",
-          textTransform: "uppercase",
-          textAlign: "center",
-          margin: 0,
-          lineHeight: 1.3,
-          transition: "opacity 0.6s ease, transform 0.6s ease",
-          opacity: exiting ? 0 : 1,
-          transform: exiting ? "translateY(-20px)" : "translateY(0)",
+          position: "absolute",
+          top: "clamp(32px, 8vh, 64px)",
+          left: "50%",
+          transform: "translateX(-50%)",
+          transition: "opacity 0.8s ease, transform 0.8s ease",
+          opacity: mounted && !exiting ? 1 : 0,
+          transitionDelay: "0.2s",
         }}
       >
-        IF NOT NOW
-      </h1>
+        <img
+          src="/inntw-logo-white.svg"
+          alt="If Not Now Then When"
+          style={{
+            width: "clamp(80px, 12vw, 140px)",
+            height: "auto",
+            opacity: 0.9,
+          }}
+        />
+      </div>
 
-      {/* Subtle prompt */}
-      <p
+      {/* Center: ENTER button with pulsating rings */}
+      <div
         style={{
-          fontFamily: "var(--font-geist-mono), monospace",
-          fontSize: "clamp(9px, 0.9vw, 12px)",
-          letterSpacing: "0.25em",
-          color: "rgba(255,255,255,0.25)",
-          textTransform: "uppercase",
-          marginTop: "clamp(24px, 4vh, 48px)",
-          transition: "opacity 0.4s ease",
-          opacity: exiting ? 0 : 1,
+          position: "relative",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
-        TAP TO FIND OUT
-      </p>
+        {/* Pulsating rings */}
+        <PulseRing delay={0} duration={3} />
+        <PulseRing delay={0.8} duration={3} />
+        <PulseRing delay={1.6} duration={3} />
+
+        {/* The button itself */}
+        <div
+          style={{
+            width: "clamp(100px, 14vw, 140px)",
+            height: "clamp(100px, 14vw, 140px)",
+            borderRadius: "50%",
+            border: "1px solid rgba(255,255,255,0.25)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "transparent",
+            transition: "border-color 0.3s ease, transform 0.6s ease, opacity 0.6s ease",
+            transform: exiting ? "scale(1.2)" : "scale(1)",
+            opacity: exiting ? 0 : 1,
+            zIndex: 1,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: "var(--font-geist-mono), monospace",
+              fontSize: "clamp(11px, 1.2vw, 15px)",
+              letterSpacing: "0.25em",
+              color: "rgba(255,255,255,0.7)",
+              textTransform: "uppercase",
+            }}
+          >
+            ENTER
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
