@@ -22,26 +22,38 @@ const MusicToggle = forwardRef<MusicToggleRef>(function MusicToggle(_, ref) {
     },
   }));
 
-  // Pause/resume when the tab becomes hidden/visible
+  // Pause when user leaves (tab switch OR app switch), resume on return
   useEffect(() => {
-    const handleVisibility = () => {
+    const pause = () => {
       const audio = audioRef.current;
-      if (!audio) return;
-
-      if (document.hidden) {
-        audio.pause();
-        audioEngine.setMuted(true);
-      } else {
-        if (soundOnRef.current) {
-          audio.play().catch(() => {});
-          audioEngine.setMuted(false);
-        }
-      }
+      if (audio) audio.pause();
+      audioEngine.setMuted(true);
     };
 
+    const resume = () => {
+      if (!soundOnRef.current) return;
+      const audio = audioRef.current;
+      if (audio) audio.play().catch(() => {});
+      audioEngine.setMuted(false);
+    };
+
+    // Tab switch (within browser)
+    const handleVisibility = () => {
+      if (document.hidden) pause();
+      else resume();
+    };
+
+    // App switch (window loses/gains focus)
+    const handleBlur = () => pause();
+    const handleFocus = () => resume();
+
     document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("blur", handleBlur);
+    window.addEventListener("focus", handleFocus);
     return () => {
       document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("focus", handleFocus);
     };
   }, []);
 
