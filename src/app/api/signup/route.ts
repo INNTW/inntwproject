@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { neon } from "@neondatabase/serverless";
+import { sendWelcomeEmail } from "@/lib/email/welcome";
 
 const sql = neon(process.env.DATABASE_URL!);
 
@@ -39,6 +40,12 @@ export async function POST(request: NextRequest) {
       INSERT INTO signups (email, phone, consent_given, consent_text, ip_address, user_agent)
       VALUES (${email || null}, ${phone || null}, ${consent_given}, ${consent_text || null}, ${ip_address}, ${user_agent})
     `;
+
+    if (email) {
+      sendWelcomeEmail(email).catch((e) =>
+        console.error("Welcome email error:", e)
+      );
+    }
 
     return NextResponse.json({ success: true });
   } catch (err) {
