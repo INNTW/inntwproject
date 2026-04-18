@@ -42,9 +42,11 @@ export async function POST(request: NextRequest) {
     `;
 
     if (email) {
-      sendWelcomeEmail(email).catch((e) =>
-        console.error("Welcome email error:", e)
-      );
+      try {
+        await sendWelcomeEmail(email);
+      } catch (e) {
+        console.error("Welcome email error:", e);
+      }
     }
 
     return NextResponse.json({ success: true });
