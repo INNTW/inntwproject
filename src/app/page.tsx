@@ -14,6 +14,7 @@ import EmailCapture from "@/components/EmailCapture";
 import ParticleCanvas from "@/components/ParticleCanvas";
 import MusicToggle from "@/components/MusicToggle";
 import IntroOverlay from "@/components/IntroOverlay";
+import AudioPreload from "@/components/AudioPreload";
 
 
 const FLIP_SPEED = 100;
@@ -100,6 +101,9 @@ export default function HomePage() {
         background: "#000",
       }}
     >
+      {/* Pre-fetch the music so it's cached by the time the user taps */}
+      {!isIGAndroid && <AudioPreload />}
+
       {/* Intro overlay — shown until user taps */}
       {!entered && <IntroOverlay onEnter={handleEnter} />}
 

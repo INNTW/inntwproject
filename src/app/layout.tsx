@@ -37,20 +37,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
-      <head>
-        {/*
-          Pre-fetch the background music as soon as the page loads so the
-          bytes are in the HTTP cache by the time the user taps "enter".
-          We do NOT decode here — Web Audio still decodes lazily on tap to
-          keep memory pressure off Instagram's Android WebView.
-        */}
-        <link
-          rel="preload"
-          as="fetch"
-          type="audio/mpeg"
-          href="/angie-loop.mp3"
-        />
-      </head>
       <body>{children}</body>
     </html>
   );
