@@ -6,6 +6,7 @@ import FullScreenBoard, {
 } from "@/components/display/FullScreenBoard";
 import { formatLines, createEmptyBoard } from "@/lib/vestaboard/message-formatter";
 import { useAudioEngine } from "@/hooks/useAudioEngine";
+import { useIsInstagramAndroid } from "@/hooks/useIsInstagramAndroid";
 import { ContentRotator } from "@/lib/content/content-rotator";
 import { QUOTES } from "@/lib/content/quotes";
 import CountdownTimer from "@/components/CountdownTimer";
@@ -28,6 +29,7 @@ export default function HomePage() {
   const soundEnabledRef = useRef(false);
   const [entered, setEntered] = useState(false);
   const musicToggleRef = useRef<{ start: () => void }>(null);
+  const isIGAndroid = useIsInstagramAndroid();
 
   const onFlipStep = useCallback(() => {
     if (audioEngine.initialized && soundEnabledRef.current) {
@@ -79,13 +81,15 @@ export default function HomePage() {
   }, [entered, cycleNext]);
 
   const handleEnter = useCallback(() => {
-    // Initialize the clack audio engine
-    audioEngine.initialize();
-    // Start the background music
-    musicToggleRef.current?.start();
-    // Reveal the experience
+    // Skip all audio + heavy effects on Instagram's Android WebView —
+    // it's memory-constrained and crashes when audio decode + canvas
+    // particle loop + board transitions fire together on entry.
+    if (!isIGAndroid) {
+      audioEngine.initialize();
+      musicToggleRef.current?.start();
+    }
     setEntered(true);
-  }, [audioEngine]);
+  }, [audioEngine, isIGAndroid]);
 
   return (
     <main
@@ -105,7 +109,7 @@ export default function HomePage() {
       </div>
 
       {/* LAYER 2: Particles — drift upward through tile gaps */}
-      <ParticleCanvas />
+      {!isIGAndroid && <ParticleCanvas />}
 
       {/* LAYER 3: Content overlay */}
       <div
@@ -118,17 +122,19 @@ export default function HomePage() {
           opacity: entered ? 1 : 0,
         }}
       >
-        {/* Music toggle — top right */}
-        <div
-          style={{
-            position: "absolute",
-            top: "20px",
-            right: "20px",
-            pointerEvents: "auto",
-          }}
-        >
-          <MusicToggle ref={musicToggleRef} />
-        </div>
+        {/* Music toggle — top right (hidden on IG Android, no audio there) */}
+        {!isIGAndroid && (
+          <div
+            style={{
+              position: "absolute",
+              top: "20px",
+              right: "20px",
+              pointerEvents: "auto",
+            }}
+          >
+            <MusicToggle ref={musicToggleRef} />
+          </div>
+        )}
         {/* Logo — centered between top and timer */}
         <div
           style={{
