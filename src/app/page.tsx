@@ -57,19 +57,17 @@ export default function HomePage() {
   }, [showMessage]);
 
   // Only start the board cycle + interval after the user enters
-  // (skipped on IG Android — no board there)
   useEffect(() => {
-    if (!entered || isIGAndroid) return;
+    if (!entered) return;
     // Kick off the first flip after a short delay
     const startTimeout = setTimeout(() => { cycleNext(); }, 400);
     const interval = setInterval(() => {
       if (!isTransitioningRef.current) cycleNext();
     }, ROTATION_INTERVAL * 1000);
     return () => { clearTimeout(startTimeout); clearInterval(interval); };
-  }, [entered, cycleNext, isIGAndroid]);
+  }, [entered, cycleNext]);
 
   useEffect(() => {
-    if (isIGAndroid) return;
     let resizeTimer: ReturnType<typeof setTimeout>;
     const handleResize = () => {
       if (!entered) return;
@@ -81,7 +79,7 @@ export default function HomePage() {
     };
     window.addEventListener("resize", handleResize);
     return () => { window.removeEventListener("resize", handleResize); clearTimeout(resizeTimer); };
-  }, [entered, cycleNext, isIGAndroid]);
+  }, [entered, cycleNext]);
 
   const handleEnter = useCallback(() => {
     // Skip all audio + heavy effects on Instagram's Android WebView —
@@ -109,16 +107,10 @@ export default function HomePage() {
       {/* Intro overlay — shown until user taps */}
       {!entered && <IntroOverlay onEnter={handleEnter} />}
 
-      {/* LAYER 1: Full-screen split-flap tile grid (skipped on IG Android —
-          the tile DOM tree + flip animations crash that WebView). On IG
-          Android we just render a plain black background instead. */}
-      {isIGAndroid ? (
-        <div style={{ position: "absolute", inset: 0, zIndex: 1, background: "#000" }} />
-      ) : (
-        <div style={{ position: "absolute", inset: 0, zIndex: 1 }}>
-          <FullScreenBoard ref={boardRef} initialBoard={initialBoard} />
-        </div>
-      )}
+      {/* LAYER 1: Full-screen split-flap tile grid */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 1 }}>
+        <FullScreenBoard ref={boardRef} initialBoard={initialBoard} />
+      </div>
 
       {/* LAYER 2: Particles — drift upward through tile gaps */}
       {!isIGAndroid && <ParticleCanvas />}
