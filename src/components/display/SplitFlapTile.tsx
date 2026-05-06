@@ -62,8 +62,10 @@ const SplitFlapTile = memo(
             flapFront.style.zIndex = "3";
             flapBack.style.transform = "rotateX(90deg)";
             flapBack.style.zIndex = "2";
-            flapFront.style.willChange = "transform, box-shadow";
-            flapBack.style.willChange = "transform, box-shadow";
+            // Skip explicit will-change — the browser auto-promotes these
+            // 3D-transformed elements during the animation. The manual
+            // hint forces persistent GPU layers that churn memory on
+            // every flip and trip up constrained WebViews (IG Android).
 
             const halfDuration = duration / 2;
 
@@ -93,8 +95,6 @@ const SplitFlapTile = memo(
               flapBack.style.zIndex = "2";
               flapBack.style.boxShadow = "inset 0 1px 0 var(--tile-split), 0 1px 3px var(--tile-shadow)";
               flapBack.style.setProperty("--flap-brighten", "0");
-              flapFront.style.willChange = "auto";
-              flapBack.style.willChange = "auto";
               currentCodeRef.current = nextCode;
               isFlippingRef.current = false;
               resolve();

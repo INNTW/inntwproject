@@ -4,23 +4,11 @@ import styles from "@/styles/tile.module.css";
 
 /**
  * A static split-flap tile — blank, no animation.
- * Pure visual filler for the edge-to-edge background.
+ *
+ * Slimmed down to a single element rendering the resting visual: the
+ * combined gradient of top + bottom halves, plus a 1px split line via
+ * ::before. Visually identical to a full SplitFlapTile at rest.
  */
 export default function DormantTile() {
-  return (
-    <div className={styles.tile}>
-      <div className={styles.topHalf}>
-        <div className={styles.charDisplay}>{" "}</div>
-      </div>
-      <div className={styles.bottomHalf}>
-        <div className={styles.charDisplay}>{" "}</div>
-      </div>
-      <div className={styles.flapFront}>
-        <div className={styles.charDisplay}>{" "}</div>
-      </div>
-      <div className={styles.flapBack}>
-        <div className={styles.charDisplay}>{" "}</div>
-      </div>
-    </div>
-  );
+  return <div className={styles.dormantTile} />;
 }
